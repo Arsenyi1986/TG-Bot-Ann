@@ -1,0 +1,48 @@
+from emoji import emojize
+from aiogram import Bot, Dispatcher, executor, types
+API_TOKEN = '5659065243:AAFVgmIHU-_DlBC__YJPEx3tQZjm0Hdx2xE'
+
+bot = Bot(token=API_TOKEN)
+dp = Dispatcher(bot)
+
+
+@dp.message_handler(commands=['start'])
+async def start(message: types.Message):
+    user_name = message.from_user.first_name
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+    order = types.KeyboardButton("Сделать заказ" + emojize(":check_mark_button:"))
+    accounting = types.KeyboardButton("Рассчитать стоимость покупки" + emojize(":dollar_banknote:"))
+    reviews = types.KeyboardButton("Отзывы" + emojize(":speaking_head:"))
+    discount = types.KeyboardButton("Скидки" + emojize(":heavy_dollar_sign:"))
+    faq = types.KeyboardButton("Часто задаваемые вопросы" + emojize(":red_question_mark:"))
+    markup.add(order, accounting, reviews, discount, faq)
+    await message.answer("Привет, " + user_name + emojize(":sparkles:") + "\n"
+                         "Чат-бот активирован\n"
+                         "Рестарт - /start\n\n"
+                         "Выберите интересующую категорию" + emojize(":backhand_index_pointing_down:"),
+                         reply_markup=markup)
+
+
+@dp.message_handler(content_types=['text'])
+async def get_text_msg(msg: types.Message):
+    if msg.text == "Сделать заказ" + emojize(":check_mark_button:"):
+        await msg.answer("Это раздел заказов")
+
+    elif msg.text == "Рассчитать стоимость покупки" + emojize(":dollar_banknote:"):
+        await msg.answer("Здесть проводится расчёт стоимости покупки")
+    elif msg.text == "Отзывы" + emojize(":speaking_head:"):
+        await msg.answer("Это раздел отзывов")
+    elif msg.text == "Скидки" + emojize(":heavy_dollar_sign:"):
+        await msg.answer("Это раздел скидок")
+    elif msg.text == "Часто задаваемые вопросы" + emojize(":red_question_mark:"):
+        await msg.answer("Это раздел часто задаваемых вопросов")
+
+@dp.callback_query_handler(func=lambda call: True)
+def callback_inline(call):
+    if call.data == 'mainmenu':
+    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                          text='вы вернулись в главное меню', reply_markup=mainmenu())
+
+
+if __name__ == "__main__":
+    executor.start_polling(dp, skip_updates=True)
