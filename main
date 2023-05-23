@@ -1,48 +1,340 @@
+import asyncio
 from emoji import emojize
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters.command import Command
+import aiogram.filters.base
+from aiogram.filters.state import State, StatesGroup
+from aiogram.types import FSInputFile
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.context import FSMContext
+import re
+
+
+class Form(StatesGroup):
+    quanth = State()
+    quantl = State()
+    wr = State()
+
+
 API_TOKEN = '5659065243:AAFVgmIHU-_DlBC__YJPEx3tQZjm0Hdx2xE'
-
 bot = Bot(token=API_TOKEN)
-dp = Dispatcher(bot)
+dp = Dispatcher()
 
 
-@dp.message_handler(commands=['start'])
-async def start(message: types.Message):
-    user_name = message.from_user.first_name
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    order = types.KeyboardButton("Сделать заказ" + emojize(":check_mark_button:"))
-    accounting = types.KeyboardButton("Рассчитать стоимость покупки" + emojize(":dollar_banknote:"))
-    reviews = types.KeyboardButton("Отзывы" + emojize(":speaking_head:"))
-    discount = types.KeyboardButton("Скидки" + emojize(":heavy_dollar_sign:"))
-    faq = types.KeyboardButton("Часто задаваемые вопросы" + emojize(":red_question_mark:"))
-    markup.add(order, accounting, reviews, discount, faq)
-    await message.answer("Привет, " + user_name + emojize(":sparkles:") + "\n"
-                         "Чат-бот активирован\n"
-                         "Рестарт - /start\n\n"
-                         "Выберите интересующую категорию" + emojize(":backhand_index_pointing_down:"),
+priv = "Привет, "
+starttext = emojize(":sparkles:") + "\nЧат-бот активирован\nРестарт - /start\n\nВыберите интересующую категорию" +\
+            emojize(":backhand_index_pointing_down:")
+kb_start = [
+        [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
+        [types.KeyboardButton(text=("Рассчитать стоимость покупки" + emojize(":dollar_banknote:")))],
+        [types.KeyboardButton(text=("Отзывы" + emojize(":speaking_head:")))],
+        [types.KeyboardButton(text=("Скидки" + emojize(":heavy_dollar_sign:"))),
+         types.KeyboardButton(text=("Часто задаваемые вопросы" + emojize(":red_question_mark:")))]
+    ]
+
+
+@dp.message(Command("start"))
+async def start(message: types.Message, state: FSMContext):
+    # start block
+    await state.set_state(None)
+    me = message.from_user
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_start, resize_keyboard=True)
+    await message.answer(priv + me.first_name + starttext,
                          reply_markup=markup)
 
 
-@dp.message_handler(content_types=['text'])
-async def get_text_msg(msg: types.Message):
-    if msg.text == "Сделать заказ" + emojize(":check_mark_button:"):
-        await msg.answer("Это раздел заказов")
+@dp.callback_query()
+async def callback_start(query: types.CallbackQuery, state: FSMContext):
+    await state.set_state(None)
+    me = query.message.from_user
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_start, resize_keyboard=True)
+    await query.message.answer(priv + me.first_name + starttext,
+                               reply_markup=markup)
 
-    elif msg.text == "Рассчитать стоимость покупки" + emojize(":dollar_banknote:"):
-        await msg.answer("Здесть проводится расчёт стоимости покупки")
-    elif msg.text == "Отзывы" + emojize(":speaking_head:"):
-        await msg.answer("Это раздел отзывов")
-    elif msg.text == "Скидки" + emojize(":heavy_dollar_sign:"):
-        await msg.answer("Это раздел скидок")
-    elif msg.text == "Часто задаваемые вопросы" + emojize(":red_question_mark:"):
-        await msg.answer("Это раздел часто задаваемых вопросов")
 
-@dp.callback_query_handler(func=lambda call: True)
-def callback_inline(call):
-    if call.data == 'mainmenu':
-    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                          text='вы вернулись в главное меню', reply_markup=mainmenu())
+@dp.message(lambda message: message.text == "Меню" or
+            message.text == "Вернуться в меню" + emojize(":right_arrow_curving_left:") or
+            message.text == "Вернуться в меню" + emojize(":counterclockwise_arrows_button:") or
+            message.text == "Вернуться в меню" or message.text == "Назад" + emojize(":right_arrow_curving_left:"))
+async def start_menu(message: types.Message, state: FSMContext):
+    # start block
+    await state.set_state(None)
+    me = message.from_user
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_start, resize_keyboard=True)
+    await message.answer(priv + me.first_name + starttext,
+                         reply_markup=markup)
 
+
+@dp.message(lambda message: message.text == "Сделать заказ" + emojize(":check_mark_button:"))
+async def get_text_ord(msg: types.Message):
+    # order block
+    kb_or = [
+        [types.KeyboardButton(text=("Знаю" + emojize(":OK_hand:")))],
+        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))],
+        [types.KeyboardButton(text=("Нужна инструкция" + emojize(":red_exclamation_mark:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_or, resize_keyboard=True)
+    await msg.answer("Вы знаете, как пользоваться приложением Poizon или Вам нужна инструкция?",
+                     reply_markup=markup)
+
+
+# guide block
+
+
+@dp.message(lambda message: message.text == "Нужна инструкция" + emojize(":red_exclamation_mark:") or
+            message.text == "Как сделать заказ? " + emojize(":shopping_bags:"))
+async def guide(msg: types.Message):
+    image = FSInputFile('images/app_image.jpg')
+    kb_guide1 = [
+        [types.KeyboardButton(text="Сделал(а), далее")],
+        [types.KeyboardButton(text="Меню")]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_guide1, resize_keyboard=True)
+    await msg.answer("Сначала скачайте приложение на IOS или Android\n\nВам нужно приложение с "
+                     "названием на китайском языке" + emojize(":high_voltage:"), reply_markup=markup)
+    await msg.answer_photo(image)
+
+
+@dp.message(lambda message: message.text == "Сделал(а), далее")
+async def guide2(msg: types.Message):
+    image = FSInputFile('images/app_ins_image.jpg')
+    kb_guide2 = [
+        [types.KeyboardButton(text="Что дальше?")],
+        [types.KeyboardButton(text="Меню")]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_guide2, resize_keyboard=True)
+    await msg.answer("1. Внизу приложения выберете значок сумки\n"
+                     "2. В поисковую строку впишите на английском языке название товара\n"
+                     "3. Выберете подходящий товар\n"
+                     "4. Посмотрите, есть ли ваш размер в наличии", reply_markup=markup)
+    await msg.answer_photo(image)
+
+
+@dp.message(lambda message: message.text == "Что дальше?")
+async def guide3(msg: types.Message):
+    image = FSInputFile('images/app_link_image.jpg')
+    kb_guide3 = [
+        [types.KeyboardButton(text="Сделать заказ")],
+        [types.KeyboardButton(text="Вернуться в меню")]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_guide3, resize_keyboard=True)
+    await msg.answer("Осталось скопировать ссылку и прислать её нам " + emojize(":person_tipping_hand:"),
+                     reply_markup=markup)
+    await msg.answer_photo(image)
+
+
+@dp.message(lambda message: message.text == "Знаю" + emojize(":OK_hand:") or message.text == "Сделать заказ")
+async def guide4(msg: types.Message):
+    kb_guide4 = [[types.KeyboardButton(text=("Вернуться в меню " + emojize(":counterclockwise_arrows_button:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_guide4, resize_keyboard=True)
+    await msg.answer(emojize(":check_mark:") + "Для оформления заказа напишите нашему менеджеру\n"
+                     "@manager_poizon_crew\n\n" + emojize(":envelope_with_arrow:") + " В сообщении"
+                     " необходимо указать:\n-ссылку на товар\n-размер товара\n-цену товара в юанях\n"
+                     "-город доставки\n\nНе забывайте, что:\n" + emojize(":minus:") + " при заказе"
+                     " 2-х товаров вы получаете скидку 1000 руб на заказ.\n" + emojize(":minus:") +
+                     " при заказе 3-х товаров вы получаете скидку 2000 руб на заказ.", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Рассчитать стоимость покупки" + emojize(":dollar_banknote:") or
+            message.text == "Изменить категорию стоимости " + emojize(":shuffle_tracks_button:"))
+async def get_text_acc(msg: types.Message, state: FSMContext):
+    # accounting block
+    await state.set_state(None)
+    kb_acc = [
+        [types.KeyboardButton(text=("Более 500 юаней" + emojize(":up_arrow:")))],
+        [types.KeyboardButton(text=("Менее 500 юаней" + emojize(":down_arrow:")))],
+        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
+    await msg.answer("Цена товара больше 500 юаней?", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Отзывы" + emojize(":speaking_head:"))
+async def get_text_rev(msg: types.Message):
+    # reviews block
+    buttons = [
+        [types.InlineKeyboardButton(text=("Читать отзывы" + emojize(":magnifying_glass_tilted_right:")),
+                                    url="https://clicks.su/d4xEN2")],
+        [types.InlineKeyboardButton(text="Вернуться в меню", callback_data="back_to_menu")]
+    ]
+    markup = types.InlineKeyboardMarkup(inline_keyboard=buttons)
+    await msg.answer("Нажмите кнопку, чтобы перейти на наш официальный телеграм канал с отзывами",
+                     reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Скидки" + emojize(":heavy_dollar_sign:"))
+async def get_text_disc(msg: types.Message):
+    # discount block
+    kb_disc = [[types.KeyboardButton(text=("Вернуться в меню" + emojize(":counterclockwise_arrows_button:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_disc, resize_keyboard=True)
+    await msg.answer("Дорогой клиент, у нас есть система лояльности! " + emojize(":trophy:") + "\n\n"
+                     "При заказе:\n"
+                     "2-х товаров скидка - 1000 руб\n"
+                     "от 3-х и более скидка - 2000 руб\n\n" +
+                     emojize(":check_mark_button:") + " А за приведенного друга - скидка 500 руб на следующий заказ",
+                     reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Часто задаваемые вопросы" + emojize(":red_question_mark:") or
+            message.text == "Другие вопросы")
+async def get_text_disc(msg: types.Message):
+    kb_faq = [
+        [types.KeyboardButton(text=("Как сделать заказ? " + emojize(":shopping_bags:")))],
+        [types.KeyboardButton(text=("Товар оригинальный? " + emojize(":magnifying_glass_tilted_right:")))],
+        [types.KeyboardButton(text=("Что входит в стоимость? " + emojize(":money_bag:")))],
+        [types.KeyboardButton(text=("Как остледить доставку? " + emojize(":delivery_truck:")))],
+        [types.KeyboardButton(text=("Сроки доставки " + emojize(":one-thirty:")))],
+        [types.KeyboardButton(text=("Условия сотрудничества " + emojize(":light_bulb:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_faq, resize_keyboard=True)
+    await msg.answer("Выберите вопрос ниже", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Товар оригинальный? " + emojize(":magnifying_glass_tilted_right:"))
+async def quest_orig(msg: types.Message):
+    kb_orig = [[types.KeyboardButton(text="Меню"), types.KeyboardButton(text="Другие вопросы")]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
+    await msg.answer("Мы доставляем только оригинальные товары!\n\nПеред отправкой они проходят проверку"
+                     " качества и только потом отправляются клиенту", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Что входит в стоимость? " + emojize(":money_bag:"))
+async def quest_cost(msg: types.Message):
+    kb_orig = [[types.KeyboardButton(text="Меню"), types.KeyboardButton(text="Другие вопросы")]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
+    await msg.answer("1) Доставка по Китаю до нашего склада\n"
+                     "2) Доставка из Китая на склад в Москву\n"
+                     "3) Наша комиссия за работу\n\n" +
+                     emojize(":minus:") + "При заказе меньше 500¥ - 499 руб\n" +
+                     emojize(":minus:") + "При заказе от 500¥ - 1299 руб", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Как остледить доставку? " + emojize(":delivery_truck:"))
+async def quest_del(msg: types.Message):
+    kb_orig = [[types.KeyboardButton(text="Меню"), types.KeyboardButton(text="Другие вопросы")]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
+    await msg.answer("Напишите нашему менеджеру\n"
+                     "@manager_poizon_crew\n\n" +
+                     emojize(":one-thirty:") + " Время работы нашей команды\n с 09:00 - 21:00 по МСК",
+                     reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Сроки доставки " + emojize(":one-thirty:"))
+async def quest_del(msg: types.Message):
+    kb_orig = [[types.KeyboardButton(text="Меню"), types.KeyboardButton(text="Другие вопросы")]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
+    await msg.answer("В любой город России и СНГ\nдоставка 3-4 недели " + emojize(":fire:"), reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Условия сотрудничества " + emojize(":light_bulb:"))
+async def quest_del(msg: types.Message):
+    kb_orig = [[types.KeyboardButton(text="Меню"), types.KeyboardButton(text="Другие вопросы")]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
+    await msg.answer(emojize(":minus:") + "Время работы нашей команды с 09:00 - 21:00 по МСК\n" +
+                     emojize(":minus:") + "Доставка только оригинальной продукции с сайта Poizon\n" +
+                     emojize(":minus:") + "Товары обмену и возврату не подлежат"
+                     " (т.к. возврат на Poizon осуществляется в течении 7 дней, а доставка идет 3-4 недели)\n\n"
+                     "Но Вам не о чем переживать, потому что мы тщательно проконсультируем по всем размерам " +
+                     emojize(":dizzy:") + "\n\nЖелаем отличного шопинга!", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "Более 500 юаней" + emojize(":up_arrow:"))
+async def acc_higher(msg: types.Message, state: FSMContext):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+    await state.set_state(Form.quanth)
+
+
+@dp.message(Form.quanth)
+async def acc_h(msg: types.Message, state: FSMContext):
+    name = msg.from_user.first_name
+    if re.match('\d+', str(msg.text.lower())):
+        inp = int(msg.text)
+    else:
+        await msg.answer(name + ", пожалуйста введите только цену товара " + emojize(":neutral_face:"))
+        return
+    cur1 = 12
+    cur2 = 12.5
+    diff = (inp*cur1)-(inp*cur2)
+    vikup_r = inp * 0.05 * cur1
+    costs = 3000 + 450 + vikup_r
+    vikup = costs - diff - 1299
+    total = (inp * cur2) + 1299 + vikup + 990
+
+    kb_acc = [
+        [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
+        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_acc)
+    await msg.answer("Итоговая стоимость товара составит: " + str(int(total)) + " руб.\n\n"
+                     "В итоговую стоимость входит:\n"
+                     "- Выкуп товара с маркетплейса " + emojize(":yen_banknote:") +
+                     "\n- Доставка товара со склада Poizon на наш склад в Китае " + emojize("\U0001f1e8\U0001f1f3") +
+                     "\n- Наша комиссия (1299 руб)\n"
+                     "- Страховка\n\n* рассчитано по курсу 12,5 руб/юань\n\n"
+                     "Доставка до Москвы оплачивается отдельно (990 руб)\n\n"
+                     "Оформляем заказ? " + emojize(":down_arrow:"), reply_markup=markup)
+    await state.set_state(None)
+
+
+@dp.message(lambda message: message.text == "Менее 500 юаней" + emojize(":down_arrow:") or
+            message.text == "Ввести цену заново " + emojize(":right_arrow_curving_left:"))
+async def acc_lower(msg: types.Message, state: FSMContext):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+    await state.set_state(Form.quantl)
+
+
+@dp.message(Form.quantl)
+async def acc_l(msg: types.Message, state: FSMContext):
+    name = msg.from_user.first_name
+    if re.match('\d+', str(msg.text.lower())):
+        inp = int(msg.text)
+    else:
+        await msg.answer(name + ", пожалуйста введите только цену товара " + emojize(":neutral_face:"))
+        return
+
+    if inp >= 500:
+        kb_wr = [
+            [types.KeyboardButton(text=("Ввести цену заново " + emojize(":right_arrow_curving_left:")))],
+            [types.KeyboardButton(text=("Изменить категорию стоимости " + emojize(":shuffle_tracks_button:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_wr)
+        await msg.answer("Минимальный сумма заказа - 100 юаней\n"
+                         "Максимальная сумма заказа в данной категории - 500 юаней\n\n"
+                         "Пожалуйста, введите цену в диапазоне от 100 до 500 юаней или"
+                         " измените категорию стоимости товара.\n\n"
+                         "Выберете кнопку ниже " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+    else:
+        cur1 = 12
+        cur2 = 12.5
+        diff = (inp * cur1) - (inp * cur2)
+        vikup_r = inp * 0.05 * cur1
+        costs = 1500 + 450 + vikup_r
+        vikup = costs - diff - 499
+        total = (inp * cur2) + 499 + vikup + 990
+
+        kb_acc = [
+            [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
+            [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_acc)
+        await msg.answer("Итоговая стоимость товара составит: " + str(int(total)) + " руб.\n\n"
+                         "В итоговую стоимость входит:\n"
+                         "- Выкуп товара с маркетплейса " + emojize(":yen_banknote:") +
+                         "\n- Доставка товара со склада Poizon на наш склад в Китае " + emojize("\U0001f1e8\U0001f1f3") +
+                         "\n- Наша комиссия (1299 руб)\n"
+                         "- Страховка\n\n* рассчитано по курсу 12,5 руб/юань\n\n"
+                         "Доставка до Москвы оплачивается отдельно (990 руб)\n\n"
+                         "Оформляем заказ? " + emojize(":down_arrow:"), reply_markup=markup)
+    await state.set_state(None)
+
+
+async def main():
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    executor.start_polling(dp, skip_updates=True)
+    asyncio.run(main())
+
