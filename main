@@ -23,7 +23,7 @@ class Form(StatesGroup):
     wr = State()
 
 
-API_TOKEN = '5659065243:AAFVgmIHU-_DlBC__YJPEx3tQZjm0Hdx2xE'
+API_TOKEN = 'secret'
 bot = Bot(token=API_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
 
