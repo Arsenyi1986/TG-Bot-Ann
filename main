@@ -14,18 +14,22 @@ import re
 
 
 class Form(StatesGroup):
-    quanth = State()
-    quantl = State()
+    quant_ot2 = State()
+    quant_do1 = State()
+    quanth_ot2 = State()
+    quanth_do1 = State()
+    quantl_ot2 = State()
+    quantl_do1 = State()
     wr = State()
 
 
-API_TOKEN = ''
+API_TOKEN = '5659065243:AAFVgmIHU-_DlBC__YJPEx3tQZjm0Hdx2xE'
 bot = Bot(token=API_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
 
 
-priv = "Привет, "
-starttext = emojize(":sparkles:") + "\nЧат-бот активирован\nРестарт - /start\n\nВыберите интересующую категорию" +\
+priv = "Здравствуйте, "
+starttext = emojize(":sparkles:") + "\nЧат-бот активирован\n\nВыберите интересующую категорию" +\
             emojize(":backhand_index_pointing_down:")
 kb_start = [
         [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
@@ -50,10 +54,9 @@ async def start(message: types.Message, state: FSMContext):
 @dp.callback_query()
 async def callback_start(query: types.CallbackQuery, state: FSMContext):
     await state.set_state(None)
-    me = query.message.from_user
     markup = types.ReplyKeyboardMarkup(keyboard=kb_start, resize_keyboard=True)
-    await query.message.answer(priv + me.first_name + starttext,
-                               reply_markup=markup)
+    await query.message.answer("Выберите интересующую категорию" +
+                               emojize(":backhand_index_pointing_down:"), reply_markup=markup)
 
 
 @dp.message(lambda message: message.text == "Меню" or
@@ -64,10 +67,9 @@ async def callback_start(query: types.CallbackQuery, state: FSMContext):
 async def start_menu(message: types.Message, state: FSMContext):
     # start block
     await state.set_state(None)
-    me = message.from_user
     markup = types.ReplyKeyboardMarkup(keyboard=kb_start, resize_keyboard=True)
-    await message.answer(priv + me.first_name + starttext,
-                         reply_markup=markup)
+    await message.answer("Выберите интересующую категорию" +
+                         emojize(":backhand_index_pointing_down:"), reply_markup=markup)
 
 
 @dp.message(lambda message: message.text == "Наши статьи " + emojize(":memo:"))
@@ -98,7 +100,7 @@ async def get_text_ord(msg: types.Message):
     ]
 
     markup = types.ReplyKeyboardMarkup(keyboard=kb_or, resize_keyboard=True)
-    await msg.answer("Вы знаете, как пользоваться приложением Poizon или Вам нужна инструкция?",
+    await msg.answer("Вы знаете, как пользоваться приложением <b>Poizon</b> или Вам нужна инструкция?",
                      reply_markup=markup)
 
 
@@ -161,7 +163,8 @@ async def guide3(msg: types.Message):
         [types.KeyboardButton(text="Меню")]
     ]
     markup = types.ReplyKeyboardMarkup(keyboard=kb_guide3, resize_keyboard=True)
-    await msg.answer("Для <b>заказа</b> Вам нужно скопировать ссылку и прислать её нам! " + emojize(":person_tipping_hand:") +
+    await msg.answer("Для <b>заказа</b> Вам нужно скопировать ссылку и прислать её нам! " +
+                     emojize(":person_tipping_hand:") +
                      "\n\n<b>В сообщении нашему менеджеру\n</b>(@manager_poizon_crew) <b>нужно указать:</b>\n"
                      "- Ссылку на товар(ы)\n"
                      "- Размер(ы)\n"
@@ -184,23 +187,8 @@ async def guide4(msg: types.Message):
                      "- Стоимость товара в ¥\n"
                      "- Ваш город\n\n"
                      "<u>Не забывайте, что у нас есть система лояльности!</u>" + emojize(":sparkles:") + "\n"
-                     "- При заказе 2-х товаров вы получаете <b>скидку 1000 руб</b> на заказ\n"
-                     "- При заказе 3-х и более товаров вы получаете <b>скидку 2000 руб</b> на заказ"
-                     , reply_markup=markup)
-
-
-@dp.message(lambda message: message.text == "Рассчитать стоимость покупки" + emojize(":dollar_banknote:") or
-            message.text == "Изменить категорию стоимости " + emojize(":shuffle_tracks_button:"))
-async def get_text_acc(msg: types.Message, state: FSMContext):
-    # accounting block
-    await state.set_state(None)
-    kb_acc = [
-        [types.KeyboardButton(text=("Более 500 юаней" + emojize(":up_arrow:")))],
-        [types.KeyboardButton(text=("Менее 500 юаней" + emojize(":down_arrow:")))],
-        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
-    ]
-    markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
-    await msg.answer("Цена товара больше 500 юаней?", reply_markup=markup)
+                     "- При заказе 3-х товаров вы получаете <b>скидку 1000 руб</b> на заказ",
+                     reply_markup=markup)
 
 
 @dp.message(lambda message: message.text == "Отзывы" + emojize(":speaking_head:"))
@@ -212,7 +200,7 @@ async def get_text_rev(msg: types.Message):
         [types.InlineKeyboardButton(text="Вернуться в меню", callback_data="back_to_menu")]
     ]
     markup = types.InlineKeyboardMarkup(inline_keyboard=buttons)
-    await msg.answer("Нажмите кнопку, чтобы перейти на наш <b>официальный</b> телеграм канал с отзывами",
+    await msg.answer("Нажмите кнопку, чтобы перейти на наш официальный телеграм канал с отзывами",
                      reply_markup=markup)
 
 
@@ -223,9 +211,8 @@ async def get_text_disc(msg: types.Message):
     markup = types.ReplyKeyboardMarkup(keyboard=kb_disc, resize_keyboard=True)
     await msg.answer("<b>Дорогой клиент</b>, у нас есть система лояльности! " + emojize(":trophy:") + "\n\n"
                      "При заказе:\n"
-                     "2-х товаров скидка - <b>1000 руб</b>\n"
-                     "от 3-х и более скидка - <b>2000 руб</b>\n\n" +
-                     emojize(":smiling_face_with_heart_eyes:") +
+                     "3-х товаров скидка - <b>1000 руб</b>\n\n" +
+                     emojize(":smiling_face_with_heart-eyes:") +
                      " А за приведенного друга - скидка <b>500 руб</b> на следующий заказ",
                      reply_markup=markup)
 
@@ -266,12 +253,13 @@ async def quest_cost(msg: types.Message):
     await msg.answer("<b>В итоговую стоимость входит:</b>\n\n" +
                      emojize(":minus:") + " Cтоимость самого товара <b>конвертированная</b> с рубля на юань\n" +
                      emojize(":minus:") + " Выкуп его с маркетплейса " + emojize(":package:") + "\n" +
-                     emojize(":minus:") + " Доставка со склада <b>Poizon на наш склад в Китае</b> " + emojize("\U0001f1e8\U0001f1f3") + "\n" +
-                     emojize(":minus:") + " Доставка до склада в Москве \n(500 руб/кг)\n" +
+                     emojize(":minus:") + " Доставка со склада Poizon на наш склад в Китае " +
+                     emojize("\U0001f1e8\U0001f1f3") + "\n" +
+                     emojize(":minus:") + " Доставка до склада в Москве \n(800 руб/кг)\n" +
                      emojize(":minus:") + " Страховка товара\n" +
                      emojize(":minus:") + " Наша комиссия \n" +
                      "При заказе <b>менее 500¥</b> - 499 руб\n"
-                     "При заказе <b>более 500¥</b> - 1299 руб", reply_markup=markup)
+                     "При заказе <b>более 500¥</b> - 799 руб", reply_markup=markup)
 
 
 @dp.message(lambda message: message.text == "Как отследить доставку? " + emojize(":delivery_truck:"))
@@ -298,24 +286,73 @@ async def quest_del2(msg: types.Message):
     markup = types.ReplyKeyboardMarkup(keyboard=kb_orig, resize_keyboard=True)
     await msg.answer(emojize(":minus:") + " Время работы нашей команды с <b>09:00 - 21:00</b> по МСК\n" +
                      emojize(":minus:") + " Доставка <b>только оригинальной</b> продукции с сайта Poizon\n" +
-                     emojize(":minus:") + " Мы <b>страхуем товар</b>, если придёт брак или товар потеряется - "
-                                          "мы возместим вам средства\n" +
-                     emojize(":minus:") + " Если товар не подошёл по размеру/не понравилась модель и т.д. "
-                                          "Обмену и возврату не подлежит (т.к. возврат на Poizon осуществляется"
-                                          " <b>в течении 7 дней</b>, а доставка до РФ идет 3-4 недели)\n\n"
-                     "Но Вам не о чем переживать, потому что мы тщательно проконсультируем по всем размерам " +
-                     emojize(":dizzy:") + "\n\nЖелаем отличного шопинга! " + emojize(":heart:"), reply_markup=markup)
+                     emojize(":minus:") + " Каждый товар проходит <b>проверку</b> "
+                                          "на оригинальность от наших экспертов\n" +
+                     emojize(":minus:") + " Мы <b>страхуем товар</b> от брака и потери\n" 
+                     "Желаем отличного шопинга! " + emojize(":red_heart:"), reply_markup=markup)
 
 
-@dp.message(lambda message: message.text == "Более 500 юаней" + emojize(":up_arrow:"))
+@dp.message(lambda message: message.text == "Рассчитать стоимость покупки" + emojize(":dollar_banknote:") or
+            message.text == "Изменить категорию стоимости " + emojize(":shuffle_tracks_button:"))
+async def get_text_cat(msg: types.Message, state: FSMContext):
+    await state.set_state(None)
+    kb_cat = [
+        [types.KeyboardButton(text="От 2 кг – обувь, сумки и тд")],
+        [types.KeyboardButton(text="До 1 кг – футболки, аксессуары и тд")]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_cat, resize_keyboard=True)
+    await msg.answer("Выберите категорию" + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "От 2 кг – обувь, сумки и тд")
+async def get_cost1(msg: types.message, state: FSMContext):
+    await state.set_state(Form.quant_ot2)
+    kb_acc = [
+        [types.KeyboardButton(text=("Более 500 юаней" + emojize(":up_arrow:")))],
+        [types.KeyboardButton(text=("Менее 500 юаней" + emojize(":down_arrow:")))],
+        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
+    await msg.answer("Цена товара больше 500 юаней?", reply_markup=markup)
+
+
+@dp.message(lambda message: message.text == "До 1 кг – футболки, аксессуары и тд")
+async def get_cost1(msg: types.message, state: FSMContext):
+    await state.set_state(Form.quant_do1)
+    kb_acc = [
+        [types.KeyboardButton(text=("Более 500 юаней" + emojize(":up_arrow:")))],
+        [types.KeyboardButton(text=("Менее 500 юаней" + emojize(":down_arrow:")))],
+        [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+    ]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
+    await msg.answer("Цена товара больше 500 юаней?", reply_markup=markup)
+
+
+@dp.message(Form.quant_ot2, lambda message: message.text == "Более 500 юаней" + emojize(":up_arrow:"))
 async def acc_higher(msg: types.Message, state: FSMContext):
     kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
     markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
     await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
-    await state.set_state(Form.quanth)
+    await state.set_state(Form.quanth_ot2)
 
 
-@dp.message(Form.quanth)
+@dp.message(Form.quanth_ot2, lambda message: message.text == "Ввести цену заново " +
+            emojize(":right_arrow_curving_left:"))
+async def acc_higher1(msg: types.Message):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+
+
+@dp.message(Form.quantl_ot2, lambda message: message.text == "Ввести цену заново " +
+            emojize(":right_arrow_curving_left:"))
+async def acc_higher1(msg: types.Message):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+
+
+@dp.message(Form.quanth_ot2)
 async def acc_h(msg: types.Message, state: FSMContext):
     name = msg.from_user.first_name
     if re.match('\d+', str(msg.text.lower())):
@@ -334,36 +371,40 @@ async def acc_h(msg: types.Message, state: FSMContext):
                          "Пожалуйста, введите цену более 500 юаней или"
                          " измените категорию стоимости товара.\n\n"
                          "Выберете кнопку ниже " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await state.set_state(Form.quanth_ot2)
     else:
 
-        total = inp * 12.5 + 1299 + ((3000 + 450 + inp * 0.05 * 12) - (inp * 12.5 - inp * 12) - 1299 - 990) + 990
+        total = inp * 12.5 + 799 + ((2500 + 450 * 2 + inp * 0.07 * 12) - (inp * 12.5 - inp * 12) - 799 - 800 * 2) +\
+                800 * 2
 
         kb_acc = [
             [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
             [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
         ]
         markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
-        await msg.answer("Итоговая стоимость товара составит: " + str(int(total)) + " руб.\n\n"
-                         "В итоговую стоимость входит:\n"
-                         "- Выкуп товара с маркетплейса " + emojize(":yen_banknote:") +
-                         "\n- Доставка товара со склада Poizon на наш склад в Китае " + emojize("\U0001f1e8\U0001f1f3") +
-                         "\n- Наша комиссия (1299 руб)\n"
-                         "- Страховка\n\n* рассчитано по курсу 12,5 руб/юань\n\n"
-                         "Доставка до Москвы оплачивается отдельно (990 руб)\n\n"
-                         "Оформляем заказ? " + emojize(":down_arrow:"), reply_markup=markup)
-    await state.set_state(None)
+        await msg.answer("<b>Итоговая стоимость товара: </b>" + str(int(total)) + " руб.\n\n"
+                         "<u>В итоговую стоимость входит:</u>\n"
+                         "1) Выкуп товара с маркетплейса " + emojize(":package:") +
+                         "\n2) Доставка товара со склада <b>Poizon</b> на наш склад в Китае " +
+                         emojize("\U0001f1e8\U0001f1f3") +
+                         "\n3) Наша комиссия (799 руб)\n"
+                         "4) Доставка до склада в Москве (800 руб/кг)\n"
+                         "5) Страховка товара\n\nСтоимость рассчитана по курсу 12,5 руб/¥\n\n"
+                         "Оформляем заказ? " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await msg.answer("<b>Напоминаем, что при заказе 3-х и более товаров вы получите скидку 1000 руб</b> " +
+                         emojize(":fire:"))
+        await state.set_state(None)
 
 
-@dp.message(lambda message: message.text == "Менее 500 юаней" + emojize(":down_arrow:") or
-            message.text == "Ввести цену заново " + emojize(":right_arrow_curving_left:"))
+@dp.message(Form.quant_ot2, lambda message: message.text == "Менее 500 юаней" + emojize(":down_arrow:"))
 async def acc_lower(msg: types.Message, state: FSMContext):
     kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
     markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
     await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
-    await state.set_state(Form.quantl)
+    await state.set_state(Form.quantl_ot2)
 
 
-@dp.message(Form.quantl)
+@dp.message(Form.quantl_ot2)
 async def acc_l(msg: types.Message, state: FSMContext):
     name = msg.from_user.first_name
     if re.match('\d+', str(msg.text.lower())):
@@ -383,23 +424,146 @@ async def acc_l(msg: types.Message, state: FSMContext):
                          "Пожалуйста, введите цену в диапазоне от 100 до 500 юаней или"
                          " измените категорию стоимости товара.\n\n"
                          "Выберете кнопку ниже " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await state.set_state(Form.quantl_ot2)
     else:
-        total = inp * 12.5 + 499 + ((1500 + 450 + inp * 0.05 * 12) - (inp * 12.5 - inp * 12) - 499 - 990) + 990
+        total = inp * 12.5 + 499 + ((1500 + 450 * 2 + inp * 0.05 * 12) - (inp * 12.5 - inp * 12) - 499 - 800 * 2) +\
+                800 * 2
 
         kb_acc = [
             [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
             [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
         ]
         markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
-        await msg.answer("Итоговая стоимость товара составит: " + str(int(total)) + " руб.\n\n"
-                         "В итоговую стоимость входит:\n"
-                         "- Выкуп товара с маркетплейса " + emojize(":yen_banknote:") +
-                         "\n- Доставка товара со склада Poizon на наш склад в Китае " + emojize("\U0001f1e8\U0001f1f3") +
-                         "\n- Наша комиссия (1299 руб)\n"
-                         "- Страховка\n\n* рассчитано по курсу 12,5 руб/юань\n\n"
-                         "Доставка до Москвы оплачивается отдельно (990 руб)\n\n"
-                         "Оформляем заказ? " + emojize(":down_arrow:"), reply_markup=markup)
-    await state.set_state(None)
+        await msg.answer("<b>Итоговая стоимость товара: </b>" + str(int(total)) + " руб.\n\n"
+                         "<u>В итоговую стоимость входит:</u>\n"
+                         "1) Выкуп товара с маркетплейса " + emojize(":package:") +
+                         "\n2) Доставка товара со склада <b>Poizon</b> на наш склад в Китае " +
+                         emojize("\U0001f1e8\U0001f1f3") +
+                         "\n3) Наша комиссия (499 руб) *специально для товаров <b>менее 500¥</b>*\n"
+                         "4) Доставка до склада в Москве (800 руб/кг)\n"
+                         "5) Страховка товара\n\nСтоимость рассчитана по курсу 12,5 руб/¥\n\n"
+                         "Оформляем заказ? " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await msg.answer(
+            "<b>Напоминаем, что при заказе 3-х и более товаров вы получите скидку 1000 руб</b> " + emojize(":fire:"))
+        await state.set_state(None)
+
+
+@dp.message(Form.quant_do1, lambda message: message.text == "Более 500 юаней" + emojize(":up_arrow:"))
+async def acc_higher(msg: types.Message, state: FSMContext):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+    await state.set_state(Form.quanth_do1)
+
+
+@dp.message(Form.quanth_do1, lambda message: message.text == "Ввести цену заново " +
+            emojize(":right_arrow_curving_left:"))
+async def acc_higher1(msg: types.Message):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+
+
+@dp.message(Form.quantl_do1, lambda message: message.text == "Ввести цену заново " +
+            emojize(":right_arrow_curving_left:"))
+async def acc_higher1(msg: types.Message):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+
+
+@dp.message(Form.quanth_do1)
+async def acc_h(msg: types.Message, state: FSMContext):
+    name = msg.from_user.first_name
+    if re.match('\d+', str(msg.text.lower())):
+        inp = int(msg.text)
+    else:
+        await msg.answer(name + ", пожалуйста введите только цену товара " + emojize(":neutral_face:"))
+        return
+
+    if inp < 500:
+        kb_wr = [
+            [types.KeyboardButton(text=("Ввести цену заново " + emojize(":right_arrow_curving_left:")))],
+            [types.KeyboardButton(text=("Изменить категорию стоимости " + emojize(":shuffle_tracks_button:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_wr, resize_keyboard=True)
+        await msg.answer("Минимальная сумма заказа в данной категории - 500 юаней\n\n"
+                         "Пожалуйста, введите цену более 500 юаней или"
+                         " измените категорию стоимости товара.\n\n"
+                         "Выберете кнопку ниже " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await state.set_state(Form.quanth_do1)
+    else:
+
+        total = inp * 12.5 + 799 + ((2500 + 450 + inp * 0.07 * 12) - (inp * 12.5 - inp * 12) - 799 - 800) + 800
+
+        kb_acc = [
+            [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
+            [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
+        await msg.answer("<b>Итоговая стоимость товара: </b>" + str(int(total)) + " руб.\n\n"
+                         "<u>В итоговую стоимость входит:</u>\n"
+                         "1) Выкуп товара с маркетплейса " + emojize(":package:") +
+                         "\n2) Доставка товара со склада <b>Poizon</b> на наш склад в Китае " +
+                         emojize("\U0001f1e8\U0001f1f3") +
+                         "\n3) Наша комиссия (799 руб)\n"
+                         "4) Доставка до склада в Москве (800 руб/кг)\n"
+                         "5) Страховка товара\n\nСтоимость рассчитана по курсу 12,5 руб/¥\n\n"
+                         "Оформляем заказ? " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await msg.answer(
+            "<b>Напоминаем, что при заказе 3-х и более товаров вы получите скидку 1000 руб</b> " + emojize(":fire:"))
+        await state.set_state(None)
+
+
+@dp.message(Form.quant_do1, lambda message: message.text == "Менее 500 юаней" + emojize(":down_arrow:"))
+async def acc_lower(msg: types.Message, state: FSMContext):
+    kb_back = [[types.KeyboardButton(text=("Назад" + emojize(":right_arrow_curving_left:")))]]
+    markup = types.ReplyKeyboardMarkup(keyboard=kb_back, resize_keyboard=True)
+    await msg.answer("Введите стоимость товара в юанях", reply_markup=markup)
+    await state.set_state(Form.quantl_do1)
+
+
+@dp.message(Form.quantl_do1)
+async def acc_l(msg: types.Message, state: FSMContext):
+    name = msg.from_user.first_name
+    if re.match('\d+', str(msg.text.lower())):
+        inp = int(msg.text)
+    else:
+        await msg.answer(name + ", пожалуйста введите только цену товара " + emojize(":neutral_face:"))
+        return
+
+    if inp >= 500:
+        kb_wr = [
+            [types.KeyboardButton(text=("Ввести цену заново " + emojize(":right_arrow_curving_left:")))],
+            [types.KeyboardButton(text=("Изменить категорию стоимости " + emojize(":shuffle_tracks_button:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_wr, resize_keyboard=True)
+        await msg.answer("Минимальный сумма заказа - 100 юаней\n"
+                         "Максимальная сумма заказа в данной категории - 500 юаней\n\n"
+                         "Пожалуйста, введите цену в диапазоне от 100 до 500 юаней или"
+                         " измените категорию стоимости товара.\n\n"
+                         "Выберете кнопку ниже " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await state.set_state(Form.quantl_do1)
+    else:
+        total = inp * 12.5 + 499 + ((1500 + 450 + inp * 0.05 * 12) - (inp * 12.5 - inp * 12) - 499 - 800) + 800
+
+        kb_acc = [
+            [types.KeyboardButton(text=("Сделать заказ" + emojize(":check_mark_button:")))],
+            [types.KeyboardButton(text=("Вернуться в меню" + emojize(":right_arrow_curving_left:")))]
+        ]
+        markup = types.ReplyKeyboardMarkup(keyboard=kb_acc, resize_keyboard=True)
+        await msg.answer("<b>Итоговая стоимость товара: </b>" + str(int(total)) + " руб.\n\n"
+                         "<u>В итоговую стоимость входит:</u>\n"
+                         "1) Выкуп товара с маркетплейса " + emojize(":package:") +
+                         "\n2) Доставка товара со склада <b>Poizon</b> на наш склад в Китае " +
+                         emojize("\U0001f1e8\U0001f1f3") +
+                         "\n3) Наша комиссия (499 руб) *специально для товаров <b>менее 500¥</b>*\n"
+                         "4) Доставка до склада в Москве (800 руб/кг)\n"
+                         "5) Страховка товара\n\nСтоимость рассчитана по курсу 12,5 руб/¥\n\n"
+                         "Оформляем заказ? " + emojize(":backhand_index_pointing_down:"), reply_markup=markup)
+        await msg.answer(
+            "<b>Напоминаем, что при заказе 3-х и более товаров вы получите скидку 1000 руб</b> " + emojize(":fire:"))
+        await state.set_state(None)
 
 
 async def main():
